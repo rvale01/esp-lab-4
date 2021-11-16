@@ -11,7 +11,6 @@
   */
 
 #include "main.h"
-//#include <stdio.h>
 
 //  pins and clock for the LED
 
@@ -51,11 +50,12 @@ void LED2_DeInit(void);
 void BSP_COM_DeInit(UART_HandleTypeDef *);
 void LED2_Toggle(void);
 int putchar(int);
-int getchar(void);
 
 int main(void)
 {
-  int input;
+  int i;
+  char hi[13]="Hello World!";
+  
 /* STM32L4xx HAL library initialization:
        - Configure the Flash prefetch, Flash preread and Buffer caches
        - Systick timer is configured by default as source of time base, but user 
@@ -90,14 +90,13 @@ int main(void)
   /* turn the LED on */
   LED2_On();
     /* loop for ever */
-    while (1)
-      {
+  for ( i=0; i != 13; i++)
+    {
 	LED2_On();
 	HAL_Delay(1000);  //delay for 1000 milliseconds - namely 1 second
-	input = getchar();
+	putchar(hi[i]);
 	LED2_Off();
 	HAL_Delay(1000);  //delay for 1000 milliseconds - namely 1 second
-	putchar(input);
       }
 
 }
@@ -254,26 +253,8 @@ void LED2_Toggle(void)
 
 int putchar(int ch)
 {
-  /* Place your implementation of fputc here */
-  /* e.g. write a character to the serial port and Loop until the end of transmission */
+  /* write a character to the serial port and Loop until the end of transmission */
   while (HAL_OK != HAL_UART_Transmit(&hDiscoUart, (uint8_t *) &ch, 1, 30000))
-  {
-    ;
-  }
-  return ch;
-}
-
-/**
-  * @brief Retargets the C library scanf function to the USART.
-  * @param None
-  * @retval None
-  */
-int getchar(void)
-{
-  /* Place your implementation of fgetc here */
-  /* e.g. readwrite a character to the USART2 and Loop until the end of transmission */
-  uint8_t ch = 0;
-  while (HAL_OK != HAL_UART_Receive(&hDiscoUart, (uint8_t *)&ch, 1, 30000))
   {
     ;
   }
