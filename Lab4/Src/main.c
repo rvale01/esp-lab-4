@@ -11,40 +11,51 @@
   */
 
 #include "main.h"
-#include <stdio.h>
-#include <string.h>
+//#include <stdio.h>
 
-struct led {
-  char ledname[5];
-  GPIO_TypeDef* port;
-  char portname;
-  uint32_t pin;
-};
-
-
-//declaration for the GPIO pins for the LED
+//  pins and clock for the LED
 
 #define LED2_PIN                         GPIO_PIN_14
 #define LED2_GPIO_PORT                   GPIOB
 #define LED2_GPIO_CLK_ENABLE()           __HAL_RCC_GPIOB_CLK_ENABLE()
 #define LED2_GPIO_CLK_DISABLE()          __HAL_RCC_GPIOB_CLK_DISABLE()
 
-#define LED1_PIN                         GPIO_PIN_5
-#define LED1_GPIO_PORT                   GPIOA
-#define LED1_GPIO_CLK_ENABLE()           __HAL_RCC_GPIOA_CLK_ENABLE()   
-#define LED1_GPIO_CLK_DISABLE()          __HAL_RCC_GPIOA_CLK_DISABLE()
+// pins and clocks for USART
+
+#define DISCOVERY_COM1                          USART1
+#define DISCOVERY_COM1_CLK_ENABLE()             __HAL_RCC_USART1_CLK_ENABLE()
+#define DISCOVERY_COM1_CLK_DISABLE()            __HAL_RCC_USART1_CLK_DISABLE()
+
+#define DISCOVERY_COM1_TX_PIN                   GPIO_PIN_6
+#define DISCOVERY_COM1_TX_GPIO_PORT             GPIOB
+#define DISCOVERY_COM1_TX_GPIO_CLK_ENABLE()     __HAL_RCC_GPIOB_CLK_ENABLE()   
+#define DISCOVERY_COM1_TX_GPIO_CLK_DISABLE()    __HAL_RCC_GPIOB_CLK_DISABLE()  
+#define DISCOVERY_COM1_TX_AF                    GPIO_AF7_USART1
+
+#define DISCOVERY_COM1_RX_PIN                   GPIO_PIN_7
+#define DISCOVERY_COM1_RX_GPIO_PORT             GPIOB
+#define DISCOVERY_COM1_RX_GPIO_CLK_ENABLE()     __HAL_RCC_GPIOB_CLK_ENABLE()   
+#define DISCOVERY_COM1_RX_GPIO_CLK_DISABLE()    __HAL_RCC_GPIOB_CLK_DISABLE()  
+#define DISCOVERY_COM1_RX_AF                    GPIO_AF7_USART1
+
+UART_HandleTypeDef hDiscoUart;
+
 
 /* Private function prototypes -----------------------------------------------*/
 static void SystemClock_Config(void);
-void LED2_Init(struct led);
-void LED2_On(struct led);
-void LED2_Off(struct led);
-void LED2_DeInit(struct led);
-void LED2_Toggle(struct led);
-
+void LED2_Init(void);
+void BSP_COM_Init( UART_HandleTypeDef *);
+void LED2_On(void);
+void LED2_Off(void);
+void LED2_DeInit(void);
+void BSP_COM_DeInit(UART_HandleTypeDef *);
+void LED2_Toggle(void);
+int putchar(int);
+int getchar(void);
 
 int main(void)
 {
+  int input;
 /* STM32L4xx HAL library initialization:
        - Configure the Flash prefetch, Flash preread and Buffer caches
        - Systick timer is configured by default as source of time base, but user 
@@ -54,36 +65,39 @@ int main(void)
              handled in milliseconds basis.
        - Low Level Initialization
      */
-  struct led myleds[2];
-
   HAL_Init();
 
   /* Configure the System clock to have a frequency of 80 MHz */
   SystemClock_Config();
 
-  strcpy(myleds[0].ledname, "LED2");
-  myleds[0].port=LED2_GPIO_PORT;
-  myleds[0].pin=LED2_PIN;
-  myleds[0] .portname='B';
-    
-  strcpy(myleds[1].ledname, "LED1");
-  myleds[1].port=LED1_GPIO_PORT;
-  myleds[1].pin=LED1_PIN;
-  myleds[1] .portname='A';
+  
+    /* Initialize all configured peripherals */
+    hDiscoUart.Instance = DISCOVERY_COM1;
+    hDiscoUart.Init.BaudRate = 115200;
+    hDiscoUart.Init.WordLength = UART_WORDLENGTH_8B;
+    hDiscoUart.Init.StopBits = UART_STOPBITS_1;
+    hDiscoUart.Init.Parity = UART_PARITY_NONE;
+    hDiscoUart.Init.Mode = UART_MODE_TX_RX;
+    hDiscoUart.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+    hDiscoUart.Init.OverSampling = UART_OVERSAMPLING_16;
+    hDiscoUart.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
+    hDiscoUart.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
+
+    BSP_COM_Init(&hDiscoUart);
 
   /* Configure the User LED */
-
-  LED2_Init(myleds[1]);
+  LED2_Init();
   /* turn the LED on */
-  LED2_On(myleds[1]);
-
+  LED2_On();
     /* loop for ever */
     while (1)
       {
-	LED2_On(myleds[1]);
+	LED2_On();
 	HAL_Delay(1000);  //delay for 1000 milliseconds - namely 1 second
-	LED2_Off(myleds[1]);
+	input = getchar();
+	LED2_Off();
 	HAL_Delay(1000);  //delay for 1000 milliseconds - namely 1 second
+	putchar(input);
       }
 
 }
@@ -129,26 +143,19 @@ static void SystemClock_Config(void)
 Inititalise the LED2 GPIO port
 */
 
-void LED2_Init(struct led this)
+void LED2_Init(void)
 {
 
    GPIO_InitTypeDef  gpio_init_structure;
   
-   switch (this.portname){
-   case 'A':
-     LED1_GPIO_CLK_ENABLE();
-   break;
-   case 'B':
-     LED2_GPIO_CLK_ENABLE();
-   break;
-   }
+  LED2_GPIO_CLK_ENABLE();
   /* Configure the GPIO_LED pin */
-  gpio_init_structure.Pin   = this.pin;
+  gpio_init_structure.Pin   = LED2_PIN;
   gpio_init_structure.Mode  = GPIO_MODE_OUTPUT_PP;
   gpio_init_structure.Pull  = GPIO_NOPULL;
   gpio_init_structure.Speed = GPIO_SPEED_FREQ_HIGH;
   
-  HAL_GPIO_Init(this.port, &gpio_init_structure);
+  HAL_GPIO_Init(LED2_GPIO_PORT, &gpio_init_structure);
 }
 
 /*
@@ -156,47 +163,119 @@ void LED2_Init(struct led this)
 deinit the GPIO for LED2
 
 */
-void LED2_DeInit(struct led this)
+void LED2_DeInit()
 {
   GPIO_InitTypeDef  gpio_init_structure;
-
-  switch (this.portname){
-   case 'A':
-     LED1_GPIO_CLK_DISABLE();
-   break;
-   case 'B':
-     LED2_GPIO_CLK_DISABLE();
-   break;
-   }
-  gpio_init_structure.Pin = this.pin;
+  
+  /* DeInit the GPIO_LED pin */
+  gpio_init_structure.Pin = LED2_PIN;
   
   /* Turn off LED */
-  HAL_GPIO_WritePin(this.port, this.pin, GPIO_PIN_RESET);
-  HAL_GPIO_DeInit(this.port, gpio_init_structure.Pin);
+  HAL_GPIO_WritePin(LED2_GPIO_PORT, LED2_PIN, GPIO_PIN_RESET);
+  HAL_GPIO_DeInit(LED2_GPIO_PORT, gpio_init_structure.Pin);
 }
 
+/*
+ initialise the COM port
+*/
 
+void BSP_COM_Init(UART_HandleTypeDef *huart)
+{
+  GPIO_InitTypeDef gpio_init_structure;
+
+  /* Enable GPIO RX/TX clocks */
+  DISCOVERY_COM1_TX_GPIO_CLK_ENABLE();
+  DISCOVERY_COM1_RX_GPIO_CLK_ENABLE();
+
+  /* Enable USART clock */
+  DISCOVERY_COM1_CLK_ENABLE();
+
+  /* Configure USART Tx as alternate function */
+  gpio_init_structure.Pin = DISCOVERY_COM1_TX_PIN;
+  gpio_init_structure.Mode = GPIO_MODE_AF_PP;
+  gpio_init_structure.Speed = GPIO_SPEED_FREQ_HIGH;
+  gpio_init_structure.Pull = GPIO_NOPULL;
+  gpio_init_structure.Alternate = DISCOVERY_COM1_TX_AF;
+  HAL_GPIO_Init(DISCOVERY_COM1_TX_GPIO_PORT, &gpio_init_structure);
+
+  /* Configure USART Rx as alternate function */
+  gpio_init_structure.Pin = DISCOVERY_COM1_RX_PIN;
+  gpio_init_structure.Mode = GPIO_MODE_AF_PP;
+  gpio_init_structure.Alternate = DISCOVERY_COM1_RX_AF;
+  HAL_GPIO_Init(DISCOVERY_COM1_RX_GPIO_PORT, &gpio_init_structure);
+
+  /* USART configuration */
+  huart->Instance = DISCOVERY_COM1;
+  HAL_UART_Init(huart);
+}
+
+/*
+  de initialise the com port
+*/
+void BSP_COM_DeInit( UART_HandleTypeDef *huart)
+{
+  /* USART configuration */
+  huart->Instance = DISCOVERY_COM1;
+  HAL_UART_DeInit(huart);
+
+  /* Enable USART clock */
+  DISCOVERY_COM1_CLK_DISABLE();
+    // DISCOVERY_COMx_CLK_DISABLE(COM);
+
+  /* DeInit GPIO pins can be done in the application 
+     (by surcharging this __weak function) */
+
+  /* GPIO pins clock, FMC clock and DMA clock can be shut down in the application 
+     by surcharging this __weak function */ 
+}
 /*
 
 Turn LED2 on
 
 */
-void LED2_On(struct led this)
+void LED2_On(void)
 {
-  HAL_GPIO_WritePin(this.port, this.pin, GPIO_PIN_SET);
+  HAL_GPIO_WritePin(LED2_GPIO_PORT, LED2_PIN, GPIO_PIN_SET);
 }
 
 /* 
 turn LED2 off
 */
 
-void LED2_Off(struct led this)
+void LED2_Off(void)
 {
-  HAL_GPIO_WritePin(this.port, this.pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(LED2_GPIO_PORT, LED2_PIN, GPIO_PIN_RESET);
 }
 
-void LED2_Toggle(struct led this)
+void LED2_Toggle(void)
 {
-  HAL_GPIO_TogglePin(this.port, this.pin);
+  HAL_GPIO_TogglePin(LED2_GPIO_PORT, LED2_PIN);
 }
 
+int putchar(int ch)
+{
+  /* Place your implementation of fputc here */
+  /* e.g. write a character to the serial port and Loop until the end of transmission */
+  while (HAL_OK != HAL_UART_Transmit(&hDiscoUart, (uint8_t *) &ch, 1, 30000))
+  {
+    ;
+  }
+  return ch;
+}
+
+/**
+  * @brief Retargets the C library scanf function to the USART.
+  * @param None
+  * @retval None
+  */
+int getchar(void)
+{
+  /* Place your implementation of fgetc here */
+  /* e.g. readwrite a character to the USART2 and Loop until the end of transmission */
+  uint8_t ch = 0;
+  while (HAL_OK != HAL_UART_Receive(&hDiscoUart, (uint8_t *)&ch, 1, 30000))
+  {
+    ;
+  }
+  return ch;
+}

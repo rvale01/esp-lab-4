@@ -12,6 +12,15 @@
 
 #include "main.h"
 #include <stdio.h>
+#include <string.h>
+
+struct led {
+  char ledname[5];
+  GPIO_TypeDef* port;
+  char portname;
+  uint32_t pin;
+};
+
 
 //declaration for the GPIO pins for the LED
 
@@ -20,13 +29,18 @@
 #define LED2_GPIO_CLK_ENABLE()           __HAL_RCC_GPIOB_CLK_ENABLE()
 #define LED2_GPIO_CLK_DISABLE()          __HAL_RCC_GPIOB_CLK_DISABLE()
 
+#define LED1_PIN                         GPIO_PIN_5
+#define LED1_GPIO_PORT                   GPIOA
+#define LED1_GPIO_CLK_ENABLE()           __HAL_RCC_GPIOA_CLK_ENABLE()   
+#define LED1_GPIO_CLK_DISABLE()          __HAL_RCC_GPIOA_CLK_DISABLE()
+
 /* Private function prototypes -----------------------------------------------*/
 static void SystemClock_Config(void);
-void LED2_Init(void);
-void LED2_On(void);
-void LED2_Off(void);
-void LED2_DeInit(void);
-void LED2_Toggle(void);
+void LED2_Init(struct led);
+void LED2_On(struct led);
+void LED2_Off(struct led);
+void LED2_DeInit(struct led);
+void LED2_Toggle(struct led);
 
 
 int main(void)
@@ -40,21 +54,35 @@ int main(void)
              handled in milliseconds basis.
        - Low Level Initialization
      */
+  struct led myleds[2];
+
   HAL_Init();
 
   /* Configure the System clock to have a frequency of 80 MHz */
   SystemClock_Config();
 
+  strcpy(myleds[0].ledname, "LED2");
+  myleds[0].port=LED2_GPIO_PORT;
+  myleds[0].pin=LED2_PIN;
+  myleds[0] .portname='B';
+    
+  strcpy(myleds[1].ledname, "LED1");
+  myleds[1].port=LED1_GPIO_PORT;
+  myleds[1].pin=LED1_PIN;
+  myleds[1] .portname='A';
+
   /* Configure the User LED */
-  LED2_Init();
+
+  LED2_Init(myleds[1]);
   /* turn the LED on */
-  LED2_On();
+  LED2_On(myleds[1]);
+
     /* loop for ever */
     while (1)
       {
-	LED2_On();
+	LED2_On(myleds[1]);
 	HAL_Delay(1000);  //delay for 1000 milliseconds - namely 1 second
-	LED2_Off();
+	LED2_Off(myleds[1]);
 	HAL_Delay(1000);  //delay for 1000 milliseconds - namely 1 second
       }
 
@@ -101,19 +129,26 @@ static void SystemClock_Config(void)
 Inititalise the LED2 GPIO port
 */
 
-void LED2_Init(void)
+void LED2_Init(struct led this)
 {
 
    GPIO_InitTypeDef  gpio_init_structure;
   
-  LED2_GPIO_CLK_ENABLE();
+   switch (this.portname){
+   case 'A':
+     LED1_GPIO_CLK_ENABLE();
+   break;
+   case 'B':
+     LED2_GPIO_CLK_ENABLE();
+   break;
+   }
   /* Configure the GPIO_LED pin */
-  gpio_init_structure.Pin   = LED2_PIN;
+  gpio_init_structure.Pin   = this.pin;
   gpio_init_structure.Mode  = GPIO_MODE_OUTPUT_PP;
   gpio_init_structure.Pull  = GPIO_NOPULL;
   gpio_init_structure.Speed = GPIO_SPEED_FREQ_HIGH;
   
-  HAL_GPIO_Init(LED2_GPIO_PORT, &gpio_init_structure);
+  HAL_GPIO_Init(this.port, &gpio_init_structure);
 }
 
 /*
@@ -121,16 +156,23 @@ void LED2_Init(void)
 deinit the GPIO for LED2
 
 */
-void LED2_DeInit()
+void LED2_DeInit(struct led this)
 {
   GPIO_InitTypeDef  gpio_init_structure;
-  
-  /* DeInit the GPIO_LED pin */
-  gpio_init_structure.Pin = LED2_PIN;
+
+  switch (this.portname){
+   case 'A':
+     LED1_GPIO_CLK_DISABLE();
+   break;
+   case 'B':
+     LED2_GPIO_CLK_DISABLE();
+   break;
+   }
+  gpio_init_structure.Pin = this.pin;
   
   /* Turn off LED */
-  HAL_GPIO_WritePin(LED2_GPIO_PORT, LED2_PIN, GPIO_PIN_RESET);
-  HAL_GPIO_DeInit(LED2_GPIO_PORT, gpio_init_structure.Pin);
+  HAL_GPIO_WritePin(this.port, this.pin, GPIO_PIN_RESET);
+  HAL_GPIO_DeInit(this.port, gpio_init_structure.Pin);
 }
 
 
@@ -139,22 +181,22 @@ void LED2_DeInit()
 Turn LED2 on
 
 */
-void LED2_On(void)
+void LED2_On(struct led this)
 {
-  HAL_GPIO_WritePin(LED2_GPIO_PORT, LED2_PIN, GPIO_PIN_SET);
+  HAL_GPIO_WritePin(this.port, this.pin, GPIO_PIN_SET);
 }
 
 /* 
 turn LED2 off
 */
 
-void LED2_Off(void)
+void LED2_Off(struct led this)
 {
-  HAL_GPIO_WritePin(LED2_GPIO_PORT, LED2_PIN, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(this.port, this.pin, GPIO_PIN_RESET);
 }
 
-void LED2_Toggle(void)
+void LED2_Toggle(struct led this)
 {
-  HAL_GPIO_TogglePin(LED2_GPIO_PORT, LED2_PIN);
+  HAL_GPIO_TogglePin(this.port, this.pin);
 }
 
