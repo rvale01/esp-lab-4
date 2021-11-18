@@ -6,8 +6,8 @@ ELF=demo.elf
 
 OBJS= $(STARTUP)  $(HAL_OBJS)  main.o
 
-HAL_OBJS= stm32l4xx_hal.o stm32l4xx_hal_rcc.o stm32l4xx_hal_rcc_ex.o stm32l4xx_hal_cortex.o stm32l4xx_hal_pwr.o stm32l4xx_hal_pwr_ex.o stm32l4xx_hal_dfsdm.o stm32l4xx_hal_gpio.o \
-stm32l4xx_hal_flash.o stm32l4xx_hal_flash_ex.o stm32l4xx_hal_flash_ramfunc.o stm32l4xx_hal_dma.o stm32l4xx_hal_uart.o stm32l4xx_hal_uart_ex.o
+HAL_OBJS= stm32l4xx_hal.o stm32l4xx_hal_rcc.o stm32l4xx_hal_rcc_ex.o stm32l4xx_hal_cortex.o stm32l4xx_hal_pwr.o stm32l4xx_hal_pwr_ex.o stm32l4xx_hal_gpio.o \
+stm32l4xx_hal_dma.o stm32l4xx_hal_uart.o stm32l4xx_hal_uart_ex.o
 
 # Tool path
 
