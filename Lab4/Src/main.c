@@ -49,7 +49,7 @@ void LED2_Off(void);
 void LED2_DeInit(void);
 void BSP_COM_DeInit(UART_HandleTypeDef *);
 void LED2_Toggle(void);
-int putchar(int);
+int __io_putchar(int);
 
 int main(void)
 {
@@ -94,7 +94,7 @@ int main(void)
     {
 	LED2_On();
 	HAL_Delay(1000);  //delay for 1000 milliseconds - namely 1 second
-	putchar(hi[i]);
+	__io_putchar(hi[i]);
 	LED2_Off();
 	HAL_Delay(1000);  //delay for 1000 milliseconds - namely 1 second
       }
@@ -251,7 +251,7 @@ void LED2_Toggle(void)
   HAL_GPIO_TogglePin(LED2_GPIO_PORT, LED2_PIN);
 }
 
-int putchar(int ch)
+int __io_putchar(int ch)
 {
   /* write a character to the serial port and Loop until the end of transmission */
   while (HAL_OK != HAL_UART_Transmit(&hDiscoUart, (uint8_t *) &ch, 1, 30000))
