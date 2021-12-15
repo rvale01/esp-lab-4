@@ -50,11 +50,12 @@ void LED2_DeInit(void);
 void BSP_COM_DeInit(UART_HandleTypeDef *);
 void LED2_Toggle(void);
 int __io_putchar(int);
+int __io_getchar();
 
 int main(void)
 {
   int i;
-  char hi[13]="Hello World!";
+  char hi[11]="Random text";
   
 /* STM32L4xx HAL library initialization:
        - Configure the Flash prefetch, Flash preread and Buffer caches
@@ -90,15 +91,21 @@ int main(void)
   /* turn the LED on */
   LED2_On();
     /* loop for ever */
-  for ( i=0; i != 13; i++)
-    {
-	LED2_On();
-	HAL_Delay(1000);  //delay for 1000 milliseconds - namely 1 second
-	__io_putchar(hi[i]);
-	LED2_Off();
-	HAL_Delay(1000);  //delay for 1000 milliseconds - namely 1 second
-      }
+ // for ( i=0; i != 13; i++i)
+   // {
+//	LED2_On();
+//	HAL_Delay(1000);  //delay for 1000 milliseconds - namely 1 second
+//	__io_putchar(hi[i]);
+//	LED2_Off();
+//	HAL_Delay(1000);  //delay for 1000 milliseconds - namely 1 second
+  //    }
 
+  //code used to read from the keyboard and print the result
+  while(1){
+    int c = __io_getchar();
+    __io_putchar(c);
+
+  }
 }
 
 static void SystemClock_Config(void)
@@ -254,9 +261,21 @@ void LED2_Toggle(void)
 int __io_putchar(int ch)
 {
   /* write a character to the serial port and Loop until the end of transmission */
-  while (HAL_OK != HAL_UART_Transmit(&hDiscoUart, (uint8_t *) &ch, 1, 30000))
+  while (HAL_OK != HAL_UART_Transmit(&hDiscoUart, (uint8_t *) &ch, 1, 2000))
   {
     ;
   }
   return ch;
 }
+
+int __io_getchar()
+{
+  int ch;
+  /* get a character from the serial port and Loop until the end of transmission */
+  while (HAL_OK != HAL_UART_Receive(&hDiscoUart, (uint8_t *) &ch, 1, 2000))
+  {
+    ;
+  }
+  return ch;
+}
+
