@@ -20,6 +20,8 @@ CMSIS			= ../Drivers/CMSIS/Core
 DEVICE			= ../Drivers/CMSIS/Device/ST/STM32L4xx/Include
 Common_BSP		= ../Drivers/BSP/Components/Common
 APP			= .
+NEWLIB                 = ../../newlib-arm-none-eabi/arm-none-eabi/newlib/
+NEWLIBINCLUDE           = ../../newlib-cygwin/newlib/libc/include/
 
 # Tools
 
@@ -39,13 +41,17 @@ VPATH=$(HAL)/Src:$(APP_CODE)
 vpath %.c $(APP_CODE)
 vpath %.s $(APP_CODE)
 vpath %.c $(HAL)/Src
+vpath %.c $(CORE)
+vpath %.c $(PERIPH)/src
+vpath %.c $(DEVICE)
+
 
 
 #  Processor specific
 
 PTYPE = STM32L475xx
 LDSCRIPT = STM32L475VGTx_FLASH.ld
-STARTUP=  startup_stm32l475xx.o system_stm32l4xx.o stm32l4xx_hal_msp.o stm32l4xx_it.o
+STARTUP=  startup_stm32l475xx.o system_stm32l4xx.o stm32l4xx_hal_msp.o stm32l4xx_it.o syscalls.o
 BOARD=USE_HAL_DRIVER
 BOARDTYPE=USE_STM32L475E_IOT01
 
@@ -58,15 +64,15 @@ CFLAGS  = -O0 -g
 FULLASSERT = -DUSE_FULL_ASSERT 
 
 #not sure about last 2 vfp flags? Also not sure about interwork or PTYPE -mfloat-abi=hard -mfpu=fpv4-sp-d16
-LDFLAGS+= -T$(LDSCRIPT) -mthumb -mcpu=cortex-m4 -nolibc -nostdlib 
+LDFLAGS+= -T$(LDSCRIPT) -mthumb -mcpu=cortex-m4 -nolibc -nostdlib -L$(NEWLIB) 
 CFLAGS+= -mcpu=cortex-m4 -mthumb -D$(BOARD) -D$(BOARDTYPE) -D$(PTYPE)
-CFLAGS+= -I$(APP)/Inc -I$(HAL)/Inc -I$(CMSIS)/Include -I$(Common_BSP)  -I$(DEVICE) 
+CFLAGS+= -I$(APP)/Inc -I$(HAL)/Inc -I$(CMSIS)/Include -I$(Common_BSP)  -I$(DEVICE) -I$(NEWLIBINCLUDE) 
 CFLAGS+=  -DUSE_USB_OTG_FS  -D$(BOARD) -DUSE_STDPERIPH_DRIVER $(FULLASSERT)
 
 # Build executable 
 
 $(ELF) : $(OBJS)
-	$(LD) $(LDFLAGS) -o $@ $(OBJS) 
+	$(LD) $(LDFLAGS) -o $@ -lc -lm $(OBJS) -lc -lm -lgcc
 
 # compile and generate dependency info
 
