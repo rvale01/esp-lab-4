@@ -55,7 +55,7 @@ int __io_getchar();
 int main(void)
 {
   int i;
-  char hi[11]="Random text";
+  char hi[11]="Random text"; //changed text as requested by worksheet 1
   
 /* STM32L4xx HAL library initialization:
        - Configure the Flash prefetch, Flash preread and Buffer caches
@@ -73,8 +73,9 @@ int main(void)
 
   
     /* Initialize all configured peripherals */
+    //Played around with the settings
     hDiscoUart.Instance = DISCOVERY_COM1;
-    hDiscoUart.Init.BaudRate = 115200;
+    hDiscoUart.Init.BaudRate = 115000;
     hDiscoUart.Init.WordLength = UART_WORDLENGTH_8B;
     hDiscoUart.Init.StopBits = UART_STOPBITS_1;
     hDiscoUart.Init.Parity = UART_PARITY_NONE;
@@ -103,6 +104,7 @@ int main(void)
   //code used to read from the keyboard and print the result
   while(1){
     int c = __io_getchar();
+    HAL_Delay(1000) //delay added as requested
     __io_putchar(c);
 
   }
@@ -268,6 +270,7 @@ int __io_putchar(int ch)
   return ch;
 }
 
+//get char function done as requested in the worksheet 1
 int __io_getchar()
 {
   int ch;
